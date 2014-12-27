@@ -11,4 +11,8 @@
     <string name="hello_blank_fragment1">Hello blank fragment 2</string>
     <string name="title_activity_vrdemo">VRDemoActivity</string>
 
+    <string name="txt_ip_address">Get Started:\n1. Launch the RemoteDroid desktop application on your computer.\n2. Enter your IP address, or select a host from the list below:</string>
+    <string name="txt_connect">Connect</string>
+    <string name="txt_recentlyUsedHosts">Visible Hosts:</string>
+    <string name="toast_invalidIP">Invalid IP address!</string>
 </resources>

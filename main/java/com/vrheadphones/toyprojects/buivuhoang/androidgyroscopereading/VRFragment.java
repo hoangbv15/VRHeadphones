@@ -7,14 +7,26 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.opengl.GLSurfaceView;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import java.net.URL;
+import com.crickettechnology.audio.Bank;
+import com.crickettechnology.audio.Ck;
+import com.crickettechnology.audio.Config;
+import com.crickettechnology.audio.Sound;
+import com.illposed.osc.OSCMessage;
+import com.illposed.osc.OSCPort;
+import com.illposed.osc.OSCPortOut;
+
+import java.io.IOException;
+import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -23,7 +35,6 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 // Import Cricket Audio library
-import com.crickettechnology.audio.*;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -31,6 +42,12 @@ import com.crickettechnology.audio.*;
  * create an instance of this fragment.
  */
 public class VRFragment extends Fragment {
+
+    private static final String TAG = "VRHeadphones";
+    //
+    private OSCPortOut sender;
+    // power lock
+    private PowerManager.WakeLock lock;
 
     private GLSurfaceView mGLSurfaceView;
     private SensorManager mSensorManager;
@@ -77,6 +94,24 @@ public class VRFragment extends Fragment {
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
+
+        Settings.init(getActivity().getApplicationContext());
+        // Hide the title bar
+        if (this.lock == null) {
+            Context appContext = this.getActivity().getApplicationContext();
+            // get wake lock
+            PowerManager manager = (PowerManager) appContext
+                    .getSystemService(Context.POWER_SERVICE);
+            this.lock = manager.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK, this
+                    .getString(R.string.app_name));
+        }
+
+        try {
+            this.sender = new OSCPortOut(InetAddress.getByName(Settings.ip), OSCPort
+                    .defaultSCOSCPort());
+        } catch (Exception e) {
+            Log.d(TAG, e.toString());
+        }
     }
 
     @Override
@@ -116,6 +151,7 @@ public class VRFragment extends Fragment {
             mGLSurfaceView.onResume();
             sound.setPaused(false);
             Ck.resume();
+            lock.acquire();
         }
         super.onResume();
     }
@@ -127,8 +163,15 @@ public class VRFragment extends Fragment {
             mGLSurfaceView.onPause();
             sound.setPaused(true);
             Ck.suspend();
+            lock.release();
         }
         super.onPause();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        this.sender.close();
     }
 
     @Override
@@ -223,7 +266,20 @@ public class VRFragment extends Fragment {
                     "y = " + currentCubeCentre[1] + "\n" +
                     "z = " + currentCubeCentre[2] + "\n");
 
+//            gyroTextView.setText("x = " + orientation[0] + "\n" +
+//                    "y = " + orientation[1] + "\n" +
+//                    "z = " + orientation[2] + "\n");
+
             sound.set3dPosition(currentCubeCentre[0], currentCubeCentre[1], currentCubeCentre[2]);
+
+            Object[] args = new Object[3];
+            args[0] = orientation[0];
+            args[1] = orientation[1];
+            args[2] = orientation[2];
+            OSCMessage msg = new OSCMessage("/rotate", args);
+
+            new OSCSender().execute(msg);
+
             Ck.update();
         }
 
@@ -327,6 +383,21 @@ public class VRFragment extends Fragment {
 
         public void onAccuracyChanged(Sensor sensor, int accuracy) {
             // Do nothing here
+        }
+    }
+
+    class OSCSender extends AsyncTask<OSCMessage, Void, Void> {
+
+        @Override
+        protected Void doInBackground(OSCMessage... params) {
+            for (OSCMessage param: params) {
+                try {
+                    sender.send(param);
+                } catch (IOException e) {
+                    Log.d(TAG, e.toString());
+                }
+            }
+            return null;
         }
     }
 }

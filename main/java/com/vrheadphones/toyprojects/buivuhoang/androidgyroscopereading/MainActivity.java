@@ -1,162 +1,142 @@
 package com.vrheadphones.toyprojects.buivuhoang.androidgyroscopereading;
 
-import android.content.Context;
-import android.net.Uri;
+import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
-import android.support.v4.app.FragmentTransaction;
-import android.support.v4.view.ViewPager;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.ActionBarActivity;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.os.Handler;
+import android.util.Log;
+import android.view.View;
+import android.view.Window;
+import android.widget.AdapterView;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ListView;
+import android.widget.SimpleAdapter;
+import android.widget.Toast;
 
-import java.util.Locale;
+import java.util.Vector;
+
+/*
+ * To-do
+ * 
+ * DNS lookup
+ * arrow keys, esc, win key
+ */
+
+public class MainActivity extends Activity {
+	private static final String TAG = "RemoteDroid";
+
+	//
+	private EditText tbIp;
+	//
+//	private DiscoverThread discover;
+	private Handler handler;
+	private SimpleAdapter adapter;
+	private Vector<String> hostlist;
+
+	public MainActivity() {
+		super();
+	}
+
+	/** Called when the activity is first created. */
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		requestWindowFeature(Window.FEATURE_NO_TITLE); // added to save screen space, the Title was shown twice, in Standard Android bar, then below in Bolder larger text, this gets rid of the standard android bar
+		setContentView(R.layout.activity_main);
+		//
+		this.handler = new Handler();
+		// set some listeners
+		Button but = (Button)this.findViewById(R.id.btnConnect);
+		but.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View v) {
+				onConnectButton();
+			}
+		});
+
+		// check SharedPreferences for IP
+		Settings.init(this.getApplicationContext());
+
+		//
+		this.tbIp = (EditText)this.findViewById(R.id.etIp);
+		if (Settings.ip != null) {
+			this.tbIp.setText(Settings.ip);
+		}
+		//
+		// discover some servers
+		this.hostlist = new Vector<String>();
+		((ListView)this.findViewById(R.id.lvHosts)).setOnItemClickListener(new AdapterView.OnItemClickListener() {
+			public void onItemClick(AdapterView adapter, View v, int position, long id) {
+				onHostClick(position);
+			}
+		});
+	}
+
+	private void updateHostList() {
+		FoundHostsAdapter adapter = new FoundHostsAdapter(this.hostlist, this.getApplication());
+		((ListView)this.findViewById(R.id.lvHosts)).setAdapter(adapter);
+	}
 
 
-public class MainActivity extends ActionBarActivity implements ActionBar.TabListener {
+	/** OS kills process */
+	public void onDestroy() {
+		super.onDestroy();
+	}
 
-    /**
-     * The {@link android.support.v4.view.PagerAdapter} that will provide
-     * fragments for each of the sections. We use a
-     * {@link FragmentPagerAdapter} derivative, which will keep every
-     * loaded fragment in memory. If this becomes too memory intensive, it
-     * may be best to switch to a
-     * {@link android.support.v4.app.FragmentStatePagerAdapter}.
-     */
-    SectionsPagerAdapter mSectionsPagerAdapter;
+	/** App starts anything it needs to start */
+	public void onStart() {
+		super.onStart();
+	}
 
-    /**
-     * The {@link ViewPager} that will host the section contents.
-     */
-    ViewPager mViewPager;
+	/** App kills anything it started */
+	public void onStop() {
+		super.onStop();
+	}
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        // Set up the action bar.
-        final ActionBar actionBar = getSupportActionBar();
-        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
-
-        // Create the adapter that will return a fragment for each of the three
-        // primary sections of the activity.
-        mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
-
-        // Set up the ViewPager with the sections adapter.
-        mViewPager = (ViewPager) findViewById(R.id.pager);
-        mViewPager.setAdapter(mSectionsPagerAdapter);
-
-        // When swiping between different sections, select the corresponding
-        // tab. We can also use ActionBar.Tab#select() to do this if we have
-        // a reference to the Tab.
-        mViewPager.setOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
-            @Override
-            public void onPageSelected(int position) {
-                actionBar.setSelectedNavigationItem(position);
-            }
-        });
-
-        // For each of the sections in the app, add a tab to the action bar.
-        for (int i = 0; i < mSectionsPagerAdapter.getCount(); i++) {
-            // Create a tab with text corresponding to the page title defined by
-            // the adapter. Also specify this Activity object, which implements
-            // the TabListener interface, as the callback (listener) for when
-            // this tab is selected.
-            actionBar.addTab(
-                    actionBar.newTab()
-                            .setText(mSectionsPagerAdapter.getPageTitle(i))
-                            .setTabListener(this));
-        }
-    }
+	/** App starts displaying things */
+	public void onResume() {
+		super.onResume();
+//		this.discover = new DiscoverThread(new DiscoverThread.DiscoverListener() {
+//			public void onAddressReceived(String address) {
+//				hostlist.add(address);
+//				Log.d(TAG, "Got host back, "+address);
+//				handler.post(new Runnable() {
+//					public void run() {
+//						updateHostList();
+//					}
+//				});
+//			}
+//		});
+//		this.discover.start();
+	}
 
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
+	/** App goes into background */
+	public void onPause() {
+		super.onPause();
+//		this.discover.closeSocket();
+	}
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    public void onTabSelected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
-        // When the given tab is selected, switch to the corresponding page in
-        // the ViewPager.
-        mViewPager.setCurrentItem(tab.getPosition());
-    }
-
-    @Override
-    public void onTabUnselected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
-    }
-
-    @Override
-    public void onTabReselected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
-    }
-
-    /**
-     * A {@link FragmentPagerAdapter} that returns a fragment corresponding to
-     * one of the sections/tabs/pages.
-     */
-    public class SectionsPagerAdapter extends FragmentPagerAdapter {
-
-        private FragmentManager fm;
-
-        public SectionsPagerAdapter(FragmentManager fm) {
-            super(fm);
-            this.fm = fm;
-
-        }
-
-        @Override
-        public Fragment getItem(int position) {
-            // getItem is called to instantiate the fragment for the given page.
-//            FragmentTransaction fragmentTransaction = fm.beginTransaction();
-            Fragment fragment;
-            fragment = VRFragment.newInstance("a", "b");
-//            if (position == 0) {
-//                fragment = VRFragment.newInstance("a", "b");
-//            }
-//            else {
-//                fragment = GyroReadingFragment.newInstance("a", "b");
-//            }
-//            fragmentTransaction.add(id, fragment);
-//            fragmentTransaction.commit();
-            return fragment;
-        }
-
-        @Override
-        public int getCount() {
-            return 1;
-        }
-
-        @Override
-        public CharSequence getPageTitle(int position) {
-            Locale l = Locale.getDefault();
-            switch (position) {
-                case 0:
-                    return getString(R.string.title_section1).toUpperCase(l);
-                case 1:
-                    return getString(R.string.title_section2).toUpperCase(l);
-            }
-            return null;
-        }
-    }
+	private void onConnectButton() {
+		String ip = this.tbIp.getText().toString();
+		if (ip.matches("^[0-9]{1,4}\\.[0-9]{1,4}\\.[0-9]{1,4}\\.[0-9]{1,4}$")) {
+			try {
+				Settings.setIp(ip);
+				//
+				Intent i = new Intent(this, VRActivity.class);
+				this.startActivity(i);
+				this.finish();
+			} catch (Exception ex) {
+				Toast.makeText(this, this.getResources().getText(R.string.toast_invalidIP), Toast.LENGTH_LONG).show();
+				Log.d(TAG, ex.toString());
+			}
+		} else {
+			Toast.makeText(this, this.getResources().getText(R.string.toast_invalidIP), Toast.LENGTH_LONG).show();
+		}
+	}
+	
+	private void onHostClick(int item) {
+		this.tbIp.setText(this.hostlist.get(item));
+		this.onConnectButton();
+	}
 }
