@@ -54,7 +54,7 @@ public class VRFragment extends Fragment {
     private GyroRenderer mRenderer;
 
     private TextView gyroTextView;
-    private Sound sound;
+//    private Sound sound;
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -136,11 +136,11 @@ public class VRFragment extends Fragment {
         Config config = new Config();
         Ck.init(getActivity(), config);
 
-        Bank bank = Bank.newBank("sound.ckb");
-        sound = Sound.newBankSound(bank, "A Woman's Heart");
-        sound.set3dEnabled(true);
-        Sound.set3dListenerPosition(0, 0, 0, 0, 1, 0, 0, 0, 1);
-        sound.play();
+//        Bank bank = Bank.newBank("sound.ckb");
+//        sound = Sound.newBankSound(bank, "A Woman's Heart");
+//        sound.set3dEnabled(true);
+//        Sound.set3dListenerPosition(0, 0, 0, 0, 1, 0, 0, 0, 1);
+//        sound.play();
         return view;
     }
 
@@ -149,8 +149,8 @@ public class VRFragment extends Fragment {
         if (mGLSurfaceView != null) {
             mRenderer.start();
             mGLSurfaceView.onResume();
-            sound.setPaused(false);
-            Ck.resume();
+//            sound.setPaused(false);
+//            Ck.resume();
             lock.acquire();
         }
         super.onResume();
@@ -161,8 +161,8 @@ public class VRFragment extends Fragment {
         if (mGLSurfaceView != null) {
             mRenderer.stop();
             mGLSurfaceView.onPause();
-            sound.setPaused(true);
-            Ck.suspend();
+//            sound.setPaused(true);
+//            Ck.suspend();
             lock.release();
         }
         super.onPause();
@@ -270,7 +270,7 @@ public class VRFragment extends Fragment {
 //                    "y = " + orientation[1] + "\n" +
 //                    "z = " + orientation[2] + "\n");
 
-            sound.set3dPosition(currentCubeCentre[0], currentCubeCentre[1], currentCubeCentre[2]);
+//            sound.set3dPosition(currentCubeCentre[0], currentCubeCentre[1], currentCubeCentre[2]);
 
             Object[] args = new Object[3];
             args[0] = orientation[0];
